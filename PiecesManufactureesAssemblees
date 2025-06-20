@@ -1,0 +1,131 @@
+class Fonction:
+    def __init__(self, nom, criticité):
+        self._PiecesAllouees = []
+        self._Nom = str(nom)
+        self._Criticite = int()
+        if int(criticité) >= 0 and int(criticité) <= 100:
+            self._Criticite = int(criticité)
+
+    # Accesseur, mutateur et propriété de l'attribut Nom
+    def _Get_Nom(self):
+        return self._Nom
+    def _Set_Nom(self, nouveaunom):
+        if len(str(nouveaunom)) > 0:
+            self._Nom = str(nouveaunom)
+    NomFonction = property(_Get_Nom, _Set_Nom)
+    
+    # Fonctions non demandées dans le test
+    def Add_Piece(self, unepiece):
+        if isinstance(unepiece, Piece) and unepiece not in self._PiecesAllouees:
+            self._PiecesAllouees.append(unepiece)
+    def _Get_Pieces(self):
+        return self._PiecesAllouees
+    PiecesAllouees = property(_Get_Pieces)
+
+    # Cas de base de la méthode qui sera surchargée dans les classes dérivées
+    def __repr__(self):
+        return "Fonction {}".format(self._Nom)
+
+class Elementaire(Fonction):
+    # Pas besoin de surcharger le constructeur de la classe mère pour cette classe fille
+     def __repr__(self):
+        return "Fonction Elementaire - '{}'".format(self._Nom)
+
+class Décomposée(Fonction):
+    def __init__(self, nom, criticité):
+        super().__init__(nom, criticité)
+        self._SousFonctions = []
+        
+    def Add_Sous_Fonction(self, sousfonction):
+        if isinstance(sousfonction, Fonction) and sousfonction != self and sousfonction not in self._SousFonctions:
+            self._SousFonctions.append(sousfonction)
+        
+    def __add__(self, sousfonction):
+        self.Add_Sous_Fonction(sousfonction)
+        
+    def __repr__(self):
+        texte = "Fonction Composée - '{}'".format(self._Nom)
+        for elementfille in self._SousFonctions:
+            texte += "\n" + "\t" + str(elementfille)
+        return texte
+
+class Piece():
+    def __init__(self, nom):
+        self._Nom = str(nom)
+        self._RelationsEntrantes = []
+        self._RelationSortantes = []
+    
+    def __repr__(self):
+        return "Pièce - {} : {} entrante(s) et {} sortante(s)".format(self._Nom, len(self._RelationsEntrantes), len(self._RelationSortantes))
+       
+    def EnRelation(self, uneautrepiece):
+        # Cas de base: on teste les proches voisins. On considère que :
+        PiecesVoisines = []
+        for elements in self._RelationSortantes:
+            PiecesVoisines.append(elements.Destination)
+        
+        if uneautrepiece in PiecesVoisines:
+            return True
+        else:
+            # Si il n'y a pas ce que l'on recherche, on avance dans le réseau DFC en suivant les relations dans le sens origine vers destination
+            for pieceaexplorer in PiecesVoisines:
+                if pieceaexplorer.EnRelation(uneautrepiece) == True:
+                    return True
+            return False
+    
+    def Add_Relation(self, unerelation, sortante = True):
+        if isinstance(unerelation, Relation) and isinstance(sortante, bool) and unerelation not in self._RelationsEntrantes + self._RelationSortantes:
+            if sortante == False:
+                self._RelationsEntrantes.append(unerelation)
+            elif sortante == True:
+                self._RelationSortantes.append(unerelation)
+            else:
+                print("Erreur dans le paramètre 'sortante'")
+
+class Relation():
+    def __init__(self, origine, destination, technologie, Ddl):
+        self._Origine = None
+        self._Destination = None
+        self._Techno = str(technologie)
+        self._Ddl = int()
+        
+        if int(Ddl) >= 0 and int(Ddl) <= 6:
+            self._Ddl = int(Ddl)
+        
+        if isinstance(origine, Piece) and isinstance(destination, Piece) and origine != destination:
+            self._Origine = origine
+            origine.Add_Relation(self)
+            self._Destination = destination
+            destination.Add_Relation(self, False)
+    
+    def _Get_Piece_destination(self):
+        return self._Destination
+    Destination = property(_Get_Piece_destination)
+            
+# Définition des fonctions et de leurs décompositions        
+FP1 = Décomposée("Maintenir le cap", 56)
+FP1.Add_Sous_Fonction(Elementaire("Orienter le bateau", 78))
+
+SF1 = Décomposée("Gérer le système", 45)
+SF1.Add_Sous_Fonction(Elementaire("Donner les ordres", 67))
+SF1.Add_Sous_Fonction(Elementaire("Acquérir les informations", 82))
+
+FP1 + SF1
+
+print(FP1)
+
+# Définition des pièces et de leurs relations
+P1 = Piece("Pièce 1")
+P2 = Piece("Pièce 2")
+P3 = Piece("Pièce 3")
+P4 = Piece("Pièce 4")
+Relation(P1 , P2 ,"sertissage" , 6)
+Relation(P2 , P4 , "rivetage" , 4)
+Relation(P2 , P3 , "collage" , 6)
+print(P2)
+
+# Vérification du programme de recherche de lien entre les pièces
+# On considère que les relations sont orientées, et donc que la recherche de voisin est également orientée
+print("P1 => P3 ?" , P1.EnRelation(P3) or P3.EnRelation(P1))
+print("P3 => P2 ?" , P3.EnRelation(P2) or P2.EnRelation(P3))
+print("P3 => P4 ? ", P3.EnRelation(P4) or P4.EnRelation(P3))
