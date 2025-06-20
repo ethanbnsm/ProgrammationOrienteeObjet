@@ -1,0 +1,117 @@
+class Eleve():
+    def __init__(self, tonnom):
+        self._nom = str(tonnom)
+        self._annee = 1
+        self._amitie = dict()
+        self._maison = None
+        self._poste_quidditch = None
+    
+    def lire_annee(self):
+        return self._annee
+    def modifier_annee(self, nouvelle_annee):
+        if int(nouvelle_annee) >= self._annee:
+            self._annee = int(nouvelle_annee)
+    annee_scolaire = property(lire_annee, modifier_annee)
+    
+    def definir_amitie(self, unautreeleve, amitie):
+        if isinstance(unautreeleve, Eleve) and unautreeleve != self:
+            if abs(float(amitie)) <=1:
+                self._amitie[unautreeleve] = float(amitie)
+    
+    def obtenir_amitie(self, unautreeleve):
+        if unautreeleve in self._amitie.keys():
+            return self.amitie[unautreeleve]
+
+    def __repr__(self):
+        if self._maison != None:
+            return "{}, {} année, de chez {}".format(self._nom, self._annee, self._maison.nom)
+        else:
+            return "{}, {} année, sans maison".format(self._nom, self._annee)
+        
+    def choisir_maison(self, maisonsdisponibles):
+        if self._maison is None and isinstance(maisonsdisponibles, list):
+            maisonchoisie = rnd.choice(maisonsdisponibles)
+            if isinstance(maisonchoisie, Maison) and maisonchoisie.ajouter_un_membre(self) == True:
+                self._maison = maisonchoisie
+ 
+    def ajouter_points(self, points):
+        if self._maison is not None:
+            print ("{} points pour {}!".format(int(points), self._maison.nom))
+            self._maison.ajouter_points(int(points))
+        
+    def affecter_poste(self, unposte):
+        if isinstance(unposte, Poste):
+            self._poste_quidditch = unposte
+    def lire_poste(self):
+        return self._poste_quidditch
+    monposte = property(lire_poste)
+    
+    
+class Maison():
+    def __init__(self, tonom, tescouleurs):
+        self._nom = str(tonom)
+        self._couleurs = str(tescouleurs)
+        self._eleves = []
+        self._points = int()
+    
+    def lire_nom(self):
+        return self._nom
+    nom = property(lire_nom)
+    
+    def ajouter_un_membre(self, nouveau_membre):
+        if isinstance(nouveau_membre, Eleve) and nouveau_membre not in self._eleves:
+            self._eleves.append(nouveau_membre)
+            return True
+        else:
+            return False
+    
+    def ajouter_points(self, points):
+        self._points += int(points)
+        
+    def retourner_equipe_quidditch(self):
+        joueurs = []
+        for _ in self._eleves:
+            if isinstance(_.monposte, Poste):
+                joueurs.append(_)
+        return joueurs
+        
+
+class Poste():    
+    def __init__(self, tonnum):
+        self._num = int(tonnum)
+
+
+class Batteur(Poste):
+    pass
+
+
+class Poursuiveur(Poste):
+    def __init__(self, tonnum):
+        super().__init__(tonnum)
+        self._possede_souafle = False
+    
+    def passer_souafle(self, unjoueur):
+        if self._possede_souafle == True and isinstance(unjoueur, Eleve) and isinstance(unjoueur.monposte, Poursuiveur) and unjoueur.maison == self._maison:
+            self._possede_souafle = False
+            unjoueur.recevoir_souafle()
+
+    def recevoir_souafle(self):
+        self._possede_souafle = True
+                              
+
+eleves, maisons = [], []
+maisons.append(Maison("Gryffondor","rouge et or"))
+eleves.append(Eleve("Harry POOtter"))
+eleves[0].choisir_maison(maisons)
+eleves[0].ajouter_points(50)
+print(eleves[0])
+
+
+eleves.append(Eleve("Kattie Bell"))
+eleves[1].choisir_maison(maisons)
+eleves[1].affecter_poste(Poursuiveur(1))
+eleves[0].affecter_poste(Poursuiveur(2))
+eleves[0].monposte.recevoir_souafle()
+eleves[1].monposte.passer_souafle(eleves[1])
+
+maisons.append(Maison("Serpentard","vert et argent"))
